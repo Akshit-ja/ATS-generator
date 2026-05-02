@@ -1,0 +1,49 @@
+fastapi==0.104.0
+uvicorn==0.23.2
+gunicorn==21.2.0
+pydantic==2.4.2
+pydantic-settings==2.0.3
+python-multipart==0.0.6
+python-dotenv==1.0.0
+sqlalchemy==2.0.22
+psycopg2-binary==2.9.9
+alembic==1.12.0
+pytest==7.4.2
+httpx==0.25.0
+pymupdf==1.24.0
+python-docx==1.0.1
+reportlab==4.0.7
+pytesseract==0.3.10
+regex==2023.10.3
+email-validator==2.1.0.post1
+# spacy==3.7.2  # Temporarily disabled for initial build
+scikit-learn==1.3.2
+# spaCy model will be installed separately via post-install script
+google-generativeai==0.7.2
+# sentence-transformers==2.3.1  # Temporarily disabled - very large dependency
+redis==5.0.1
+hiredis==2.2.3
+celery==5.3.4
+openai==1.3.5
+tiktoken==0.5.1
+# Authentication and security  
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# Production server
+gunicorn==21.2.0
+# rate-limiter==0.0.3  # Temporarily disabled due to compatibility issues
+pytest-mock==3.12.0
+
+# OpenTelemetry instrumentation
+opentelemetry-api==1.19.0
+opentelemetry-sdk==1.19.0
+opentelemetry-exporter-otlp==1.19.0
+opentelemetry-instrumentation-fastapi==0.40b0
+opentelemetry-instrumentation-sqlalchemy==0.40b0
+opentelemetry-instrumentation-redis==0.40b0
+opentelemetry-instrumentation-celery==0.40b0
+opentelemetry-instrumentation-httpx==0.40b0
+opentelemetry-exporter-prometheus==1.12.0rc1
+prometheus-client==0.17.1
+# grafana-dashboard-builder==0.6.0a1  # Temporarily disabled

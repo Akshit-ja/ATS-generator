@@ -1,0 +1,31 @@
+# AI Resume Generator: Full System Validation, Debugging, and Deployment Plan
+
+Hello Warp,
+
+I have an existing full-stack project, an "AI Resume Generator," that is already built. I need you to act as my lead Site Reliability Engineer (SRE) and QA specialist. Your mission is to get this project from its current state to being fully tested, stable, and deployed.
+
+Please keep this entire context for all our follow-up interactions.
+
+## Project Overview
+The application is an AI-powered resume generator with the following stack:
+- **Frontend**: Next.js with TypeScript and Tailwind CSS.
+- **Backend**: Python with FastAPI.
+- **Database**: PostgreSQL (managed via Supabase).
+- **Asynchronous Tasks**: Celery with a Redis message broker.
+- **AI/NLP**: OpenAI API (GPT-4), spaCy, and Sentence-Transformers.
+- **Containerization**: Docker and Docker Compose for the local environment.
+
+## Your Mission
+Your primary goal is to **validate the entire system, find and fix bugs, and prepare a production-ready deployment.**
+
+## Initial Task: Project Audit and Environment Setup
+Please start by auditing the existing project in the current directory (`./resume-ai-generator`).
+
+1.  **Analyze the Codebase**: Scan the directory structure and key configuration files (`package.json`, `pyproject.toml`, `docker-compose.yml`, `.env.example`). List all the services and their dependencies.
+2.  **Set Up the Environment**:
+    -   Create a `.env` file from the `.env.example` template. I will provide the necessary secrets (like API keys and database URLs) when you prompt me for them.
+    -   Install all frontend dependencies using `npm install`.
+    -   Install all backend dependencies using `poetry install`.
+3.  **Initial Build**: Attempt to build all services using `docker-compose build`.
+
+Execute this plan step-by-step. If you encounter any dependency conflicts, version mismatches, or build errors, please diagnose the problem, explain the root cause, and suggest the specific code or configuration changes to fix it.

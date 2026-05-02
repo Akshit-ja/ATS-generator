@@ -1,0 +1,56 @@
+groups:
+  - name: resume_ai_alerts
+    rules:
+      - alert: HighAPILatency
+        expr: api_latency_sum / api_latency_count > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency detected"
+          description: "API endpoint {{ $labels.endpoint }} has high latency ({{ $value }}s)"
+
+      - alert: HighGPTResponseTime
+        expr: gpt_response_time_sum / gpt_response_time_count > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High GPT response time detected"
+          description: "GPT model {{ $labels.model }} has high response time ({{ $value }}s)"
+
+      - alert: HighErrorRate
+        expr: rate(error_count_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error type {{ $labels.error_type }} has high rate ({{ $value }} errors/s)"
+
+      - alert: HighAPICost
+        expr: sum(increase(api_cost_total[24h])) > 50
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API cost detected"
+          description: "API cost has exceeded $50 in the last 24 hours (current: ${{ $value }})"
+
+      - alert: LowCacheHitRate
+        expr: rate(redis_cache_hits_total[1h]) / (rate(redis_cache_hits_total[1h]) + rate(redis_cache_misses_total[1h])) < 0.5
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low cache hit rate detected"
+          description: "Redis cache hit rate is below 50% (current: {{ $value | humanizePercentage }})"
+
+      - alert: LongCeleryTaskDuration
+        expr: celery_task_duration_sum / celery_task_duration_count > 60
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Long Celery task duration detected"
+          description: "Celery task {{ $labels.task_name }} is taking too long to complete ({{ $value }}s)"

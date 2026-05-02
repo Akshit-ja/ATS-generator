@@ -1,0 +1,242 @@
+name: Resume AI Generator CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: resume_ai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:6
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest pytest-cov
+        pip install -r requirements.txt
+        
+    - name: Run unit tests
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resume_ai_test
+        REDIS_URL: redis://localhost:6379/0
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        pytest tests/test_*.py -v --cov=app
+        
+    - name: Run integration tests
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resume_ai_test
+        REDIS_URL: redis://localhost:6379/0
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        pytest tests/integration/test_*.py -v
+        
+    - name: Run AI evaluation tests
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/resume_ai_test
+        REDIS_URL: redis://localhost:6379/0
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        pytest tests/ai_eval/test_*.py -v
+        
+  frontend-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+        
+    - name: Run frontend tests
+      working-directory: ./frontend
+      run: npm test
+        
+  load-test:
+    runs-on: ubuntu-latest
+    needs: [test, frontend-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install k6
+      run: |
+        curl -L https://github.com/grafana/k6/releases/download/v0.42.0/k6-v0.42.0-linux-amd64.tar.gz | tar xz
+        sudo cp k6-v0.42.0-linux-amd64/k6 /usr/local/bin
+        
+    - name: Set up test environment
+      run: |
+        # Here you would set up a test environment for load testing
+        # This is a placeholder - in a real scenario, you would deploy your app to a test environment
+        echo "Setting up test environment for load testing"
+        
+    - name: Run k6 load tests
+      working-directory: ./backend/tests/load
+      run: |
+        # Modify the endpoint to point to your test environment
+        k6 run --summary-export=load-test-results.json resume_load_test.js
+        
+    - name: Upload load test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: load-test-results
+        path: ./backend/tests/load/load-test-results.json
+        
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, frontend-test]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+      
+    - name: Login to DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        
+    - name: Build and push backend
+      uses: docker/build-push-action@v4
+      with:
+        context: ./backend
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/resume-ai-backend:${{ github.sha }}
+        
+    - name: Build and push frontend
+      uses: docker/build-push-action@v4
+      with:
+        context: ./frontend
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/resume-ai-frontend:${{ github.sha }}
+        
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, load-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    # AWS ECS/Fargate Deployment (uncomment and configure secrets for AWS deployment)
+    - name: Configure AWS credentials
+      if: ${{ vars.DEPLOYMENT_TARGET == 'AWS' }}
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+        
+    - name: Login to Amazon ECR
+      if: ${{ vars.DEPLOYMENT_TARGET == 'AWS' }}
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      
+    - name: Download task definition
+      if: ${{ vars.DEPLOYMENT_TARGET == 'AWS' }}
+      run: |
+        aws ecs describe-task-definition --task-definition resume-ai-task --query taskDefinition > task-definition.json
+        
+    - name: Update backend container image
+      if: ${{ vars.DEPLOYMENT_TARGET == 'AWS' }}
+      id: update-backend-image
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: resume-ai-backend
+        image: ${{ secrets.DOCKERHUB_USERNAME }}/resume-ai-backend:${{ github.sha }}
+        
+    - name: Update frontend container image
+      if: ${{ vars.DEPLOYMENT_TARGET == 'AWS' }}
+      id: update-frontend-image
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: ${{ steps.update-backend-image.outputs.task-definition }}
+        container-name: resume-ai-frontend
+        image: ${{ secrets.DOCKERHUB_USERNAME }}/resume-ai-frontend:${{ github.sha }}
+        
+    - name: Deploy to Amazon ECS
+      if: ${{ vars.DEPLOYMENT_TARGET == 'AWS' }}
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.update-frontend-image.outputs.task-definition }}
+        service: resume-ai-service
+        cluster: resume-ai-cluster
+        wait-for-service-stability: true
+    
+    # Railway Deployment (MVP option)
+    - name: Deploy Backend to Railway
+      if: ${{ vars.DEPLOYMENT_TARGET == 'RAILWAY' }}
+      uses: railwayapp/railway-github-action@v1.0.0
+      with:
+        railway_token: ${{ secrets.RAILWAY_TOKEN }}
+        service: resume-ai-backend
+        directory: ./backend
+      env:
+        RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+    
+    # Vercel Frontend Deployment (MVP option)
+    - name: Deploy Frontend to Vercel
+      if: ${{ vars.DEPLOYMENT_TARGET == 'VERCEL' }}
+      uses: amondnet/vercel-action@v20
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        working-directory: ./frontend
+        
+    - name: Verify deployment
+      run: |
+        echo "Deployment completed successfully!"
+        if [[ "${{ vars.DEPLOYMENT_TARGET }}" == "AWS" ]]; then
+          echo "Application is now available at https://${{ secrets.DOMAIN_NAME }}"
+        elif [[ "${{ vars.DEPLOYMENT_TARGET }}" == "RAILWAY" || "${{ vars.DEPLOYMENT_TARGET }}" == "VERCEL" ]]; then
+          echo "Backend is deployed on Railway and Frontend on Vercel"
+          echo "Frontend URL: ${{ secrets.VERCEL_DEPLOYMENT_URL }}"
+        fi
