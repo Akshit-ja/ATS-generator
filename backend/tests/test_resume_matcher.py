@@ -4,13 +4,13 @@ import sys
 import os
 import json
 import numpy as np
-from backend.app.services.resume_matcher import ResumeMatcher
+from app.services.resume_matcher import ResumeMatcher
 
 class TestResumeMatcher(unittest.TestCase):
     
-    @patch('backend.app.services.resume_matcher.SentenceTransformer')
-    @patch('backend.app.services.resume_matcher.redis.Redis')
-    @patch('backend.app.services.resume_matcher.JobAnalyzer')
+    @patch('app.services.resume_matcher.SentenceTransformer')
+    @patch('app.services.resume_matcher.redis.Redis')
+    @patch('app.services.resume_matcher.JobAnalyzer')
     def setUp(self, mock_job_analyzer, mock_redis, mock_sentence_transformer):
         # Mock the SentenceTransformer model
         self.mock_model = mock_sentence_transformer.return_value
