@@ -9,7 +9,7 @@ from ...auth.jwt import get_current_active_user
 from ..dependencies import rate_limit_dependency, verify_resume_ownership
 from sqlalchemy.orm import Session
 from ...database import get_db
-from ...models.resume import Resume
+from ...db.models import Resume
 
 router = APIRouter(prefix="/api/v1", tags=["resumes"])
 resume_parser = ResumeParser()
