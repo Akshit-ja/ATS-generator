@@ -22,7 +22,7 @@ For detailed project organization, see [PROJECT_STRUCTURE.md](docs/PROJECT_STRUC
    ```bash
    git clone <repository>
    cd resume-ai-generator
-   cp .env.multi-ai-example .env
+   cp .env.example .env
    ```
 
 2. **Configure AI services** in `.env`:
@@ -129,7 +129,7 @@ resume-ai-generator/
 - Docker and Docker Compose
 - Node.js 16+ (for local development)
 - Python 3.9+ (for local development)
-- OpenAI API key
+- AI provider API key
 
 ### Quick Start with Docker
 
@@ -140,15 +140,8 @@ resume-ai-generator/
    ```
 
 2. Create a `.env` file in the root directory:
-   ```
-   # Backend
-   DATABASE_URL=postgresql://postgres:postgres@db:5432/resume_ai
-   SECRET_KEY=your_secret_key
-   OPENAI_API_KEY=your_openai_api_key
-   REDIS_URL=redis://redis:6379/0
-   
-   # Frontend
-   NEXT_PUBLIC_API_URL=http://localhost:8000
+   ```bash
+   cp .env.example .env
    ```
 
 3. Start the application:
@@ -211,6 +204,12 @@ uvicorn app.main:app --reload
 ```
 
 The backend will be available at http://localhost:8000
+
+## Sharing and Deployment
+
+- Copy `.env.example` to `.env` for local development, or use `.env.multi-ai-example` if you want the expanded multi-provider settings.
+- Keep real API keys and production secrets out of GitHub. The repository `.gitignore` already excludes `.env`, `.env.local`, and `.env.production`.
+- Docker Compose is the fastest way to boot the full stack locally; for backend-only development, the API can also run with SQLite and a placeholder OpenAI key if you are only testing startup.
 
 ## API Reference
 

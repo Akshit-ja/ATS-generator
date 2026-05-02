@@ -164,7 +164,7 @@ def check_backend_logs():
 
 def main():
     print("🚀 OpenAI API Key Validation Test")
-    print("Testing your API key: sk-proj-mlf-...GMAA")
+    print("Testing your configured API key")
     print("=" * 60)
     
     # Test via backend
