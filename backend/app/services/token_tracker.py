@@ -5,7 +5,7 @@ import tiktoken
 from typing import Dict, Optional, List, Any
 import logging
 
-from ..models import TokenUsage, User, JobDescription, Resume, UserBudgetSettings, EndpointType
+from ..db.models import TokenUsage, User, JobDescription, Resume, UserBudgetSettings, EndpointType
 
 logger = logging.getLogger(__name__)
 
