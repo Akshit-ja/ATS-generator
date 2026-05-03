@@ -49,7 +49,7 @@ class JobAnalyzer:
         # Experience level indicators
         self.experience_levels = {
             "entry": ["entry level", "junior", "0-1 year", "0-2 years", "graduate", "recent graduate", "intern"],
-            "mid": ["mid level", "intermediate", "2-5 years", "3-5 years", "experienced"],
+            "mid": ["mid level", "mid-level", "intermediate", "2-5 years", "3-5 years", "experienced"],
             "senior": ["senior", "lead", "5+ years", "7+ years", "10+ years", "principal", "architect", "manager"]
         }
     
@@ -123,10 +123,11 @@ class JobAnalyzer:
         result = {category: [] for category in self.categories.keys()}
         
         for keyword in keywords:
+            keyword_lower = keyword.lower()
             categorized = False
             for category, terms in self.categories.items():
                 for term in terms:
-                    if term in keyword or keyword in term:
+                    if term in keyword_lower or keyword_lower in term:
                         if keyword not in result[category]:
                             result[category].append(keyword)
                             categorized = True
@@ -138,6 +139,7 @@ class JobAnalyzer:
     
     def _determine_experience_level(self, text: str) -> str:
         """Determine required experience level from text"""
+        text = text.lower()
         # Count occurrences of experience level indicators
         level_counts = {level: 0 for level in self.experience_levels.keys()}
         

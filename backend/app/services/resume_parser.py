@@ -100,7 +100,7 @@ class ResumeParser:
                 continue
 
             parts = [p for p in line.split() if p]
-            if 2 <= len(parts) <= 4:
+            if 2 <= len(parts) <= 4 and all(p[0].isupper() for p in parts if p):
                 return line
 
         return None

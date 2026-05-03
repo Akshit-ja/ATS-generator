@@ -13,10 +13,12 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-class UserResponse(UserBase):
+class UserResponse(BaseModel):
     id: int
+    email: EmailStr
+    username: str
     is_active: bool
-    created_at: datetime
+    created_at: Optional[datetime] = None
     
     class Config:
         orm_mode = True
@@ -26,4 +28,4 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    user_id: Optional[int] = None
+    email: Optional[str] = None
