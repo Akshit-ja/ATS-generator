@@ -48,11 +48,23 @@ class User(Base):
 
     @staticmethod
     def get_password_hash(password: str) -> str:
-        return _pwd_context.hash(password)
+        return _pwd_context.hash(User._normalize_password(password))
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        return _pwd_context.verify(plain_password, hashed_password)
+        return _pwd_context.verify(User._normalize_password(plain_password), hashed_password)
+
+    @staticmethod
+    def _normalize_password(password):
+        if password is None:
+            return password
+        if isinstance(password, str):
+            password_bytes = password.encode("utf-8")
+        else:
+            password_bytes = password
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        return password_bytes
 
 
 class UserProfile(Base):

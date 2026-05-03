@@ -121,11 +121,13 @@ class JobAnalyzer:
     def _categorize_keywords(self, keywords: List[str]) -> Dict[str, List[str]]:
         """Categorize keywords into predefined categories"""
         result = {category: [] for category in self.categories.keys()}
+        category_order = ["tools", "skills", "methodologies", "soft_skills"]
         
         for keyword in keywords:
             keyword_lower = keyword.lower()
             categorized = False
-            for category, terms in self.categories.items():
+            for category in category_order:
+                terms = self.categories[category]
                 for term in terms:
                     if term in keyword_lower or keyword_lower in term:
                         if keyword not in result[category]:
