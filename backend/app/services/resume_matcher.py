@@ -7,6 +7,10 @@ from .job_analyzer import JobAnalyzer
 from .redis_metrics import instrument_redis_methods
 from ..core.telemetry import get_tracer
 import os
+try:
+    from sentence_transformers import SentenceTransformer
+except Exception:  # pragma: no cover - optional dependency
+    SentenceTransformer = None
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer("resume_matcher")
@@ -140,18 +144,29 @@ class ResumeMatcher:
         except Exception as e:
             logger.error(f"Redis save error: {str(e)}")
             return False
+
+    def _analyze_job(self, job_description: str) -> Dict[str, List[str]]:
+        """Analyze job description and return categorized keywords plus a flat list."""
+        analysis = self.job_analyzer.analyze_job_description(job_description)
+        cleaned_text = self.job_analyzer._clean_text(job_description)
+        keywords = self.job_analyzer._extract_keywords(cleaned_text)
+        analysis["keywords"] = keywords
+        return analysis
     
-    def _calculate_keyword_coverage(self, resume_text: str, job_analysis: Dict) -> Tuple[float, List[str]]:
+    def _calculate_keyword_coverage(self, resume_text: str, job_analysis: Dict) -> Tuple[float, List[str]] | float:
         """Calculate keyword coverage score and identify missing keywords"""
         resume_text_lower = resume_text.lower()
         
         # Combine all job keywords
-        all_keywords = []
-        for category in ["skills", "tools", "methodologies"]:
-            all_keywords.extend(job_analysis.get(category, []))
+        if isinstance(job_analysis, list):
+            all_keywords = job_analysis
+        else:
+            all_keywords = []
+            for category in ["skills", "tools", "methodologies"]:
+                all_keywords.extend(job_analysis.get(category, []))
         
         if not all_keywords:
-            return 0.0, []
+            return 0.0 if isinstance(job_analysis, list) else (0.0, [])
         
         # Count matched keywords
         matched_keywords = []
@@ -164,9 +179,14 @@ class ResumeMatcher:
                 missing_keywords.append(keyword)
         
         # Calculate coverage score
-        coverage_score = len(matched_keywords) / len(all_keywords) * 100 if all_keywords else 0.0
+        if isinstance(job_analysis, list):
+            coverage_score = len(matched_keywords) / len(all_keywords) if all_keywords else 0.0
+        else:
+            coverage_score = len(matched_keywords) / len(all_keywords) * 100 if all_keywords else 0.0
         
         # Return top missing keywords (max 10)
+        if isinstance(job_analysis, list):
+            return coverage_score
         return coverage_score, missing_keywords[:10]
     
     def _calculate_semantic_similarity(self, resume_text: str, job_description: str) -> float:

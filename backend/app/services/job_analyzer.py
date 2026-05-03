@@ -29,6 +29,7 @@ class JobAnalyzer:
             ]),
             "tools": set([
                 "jira", "confluence", "slack", "teams", "github", "gitlab", "bitbucket", "jenkins", "travis",
+                "aws", "azure", "gcp",
                 "circleci", "docker", "kubernetes", "terraform", "ansible", "puppet", "chef", "prometheus",
                 "grafana", "datadog", "splunk", "elasticsearch", "kibana", "logstash", "kafka", "rabbitmq",
                 "redis", "memcached", "nginx", "apache", "iis", "tomcat", "webpack", "babel", "npm", "yarn",
@@ -104,7 +105,14 @@ class JobAnalyzer:
         words = text.split()
         
         # Filter words (remove common stop words and short words)
-        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should'}
+        stop_words = {
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+            'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did',
+            'will', 'would', 'could', 'should', 'years', 'year', 'experience', 'experiences',
+            'required', 'requirements', 'requirement', 'responsible', 'responsibilities',
+            'looking', 'needed', 'need', 'role', 'position', 'company', 'companies', 'like',
+            'including', 'include', 'includes', 'must', 'knowledge'
+        }
         
         filtered_words = []
         for word in words:

@@ -21,9 +21,13 @@ def client():
 # Mock authentication
 @pytest.fixture
 def mock_auth():
-    with patch("app.dependencies.auth.get_current_user") as mock:
-        mock.return_value = {"id": "test-user-id", "email": "test@example.com"}
-        yield mock
+    with (
+        patch("app.routers.resume.get_current_active_user") as resume_auth,
+        patch("app.routers.validate.get_current_active_user") as validate_auth,
+    ):
+        resume_auth.return_value = {"id": "test-user-id", "email": "test@example.com"}
+        validate_auth.return_value = {"id": "test-user-id", "email": "test@example.com"}
+        yield resume_auth
 
 # Mock ResumeService
 @pytest.fixture

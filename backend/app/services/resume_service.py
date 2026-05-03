@@ -7,10 +7,10 @@ from .multi_ai_service import MultiAIService
 class ResumeService:
     """Service for handling resume operations"""
     
-    def __init__(self, db: Session = None):
+    def __init__(self, db: Session = None, gpt_service: Optional[object] = None):
         self.db = db
         self.token_tracker = TokenTracker(db) if db else None
-        self.ai_service = MultiAIService()
+        self.ai_service = gpt_service or MultiAIService()
     
     def create_resume(self, resume_data: Dict) -> Dict:
         """
