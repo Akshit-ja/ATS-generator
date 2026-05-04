@@ -130,7 +130,13 @@ class ResumeService:
             token_usage = ai_result.get("token_usage", {})
             content = ai_result.get("content")
             if content is None:
-                content = "\n".join(str(value) for value in ai_result.values())
+                content_parts = []
+                for key, value in ai_result.items():
+                    if key in {"token_usage", "cost"}:
+                        continue
+                    if isinstance(value, (str, int, float)):
+                        content_parts.append(str(value))
+                content = "\n".join(content_parts)
             normalized = dict(ai_result)
             normalized.setdefault("content", content)
         else:

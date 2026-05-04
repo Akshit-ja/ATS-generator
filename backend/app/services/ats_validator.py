@@ -58,9 +58,6 @@ class ATSValidator:
         Returns:
             Dictionary with validation results for each rule and overall score
         """
-        if job_description is not None:
-            return self._validate_text(resume_input)
-
         file_ext = os.path.splitext(resume_input)[1].lower()
 
         try:
@@ -68,12 +65,13 @@ class ATSValidator:
                 return self._validate_pdf(resume_input)
             elif file_ext == '.docx':
                 return self._validate_docx(resume_input)
-            else:
+            elif file_ext:
                 return {
                     "error": f"Unsupported file format: {file_ext}. Please upload a PDF or DOCX file.",
                     "overall_score": 0,
                     "passed": False
                 }
+            return self._validate_text(resume_input, job_description)
         except Exception as e:
             logger.error(f"Error validating resume: {str(e)}")
             return {
@@ -82,17 +80,20 @@ class ATSValidator:
                 "passed": False
             }
 
-    def _validate_text(self, resume_text: str) -> Dict[str, Any]:
+    def _validate_text(self, resume_text: str, job_description: Optional[str] = None) -> Dict[str, Any]:
         """Validate resume text against basic ATS rules."""
         results = self._validate_content(resume_text)
         overall_score = self._calculate_score(results)
+        suggestions = []
+        if job_description:
+            suggestions.append("Include keywords from the job description where relevant.")
 
         return {
             "overall_score": overall_score,
             "recognized_headers": results.get("recognized_section_headers", False),
             "proper_date_formats": results.get("proper_date_formats", False),
             "content_score": overall_score,
-            "suggestions": []
+            "suggestions": suggestions
         }
     
     def _validate_pdf(self, file_path: str) -> Dict[str, Any]:
