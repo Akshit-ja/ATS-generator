@@ -50,7 +50,11 @@ async def validate_resume_text(
     try:
         resume_text = validation_data.get("resume_text", "")
         job_description = validation_data.get("job_description")
-        return validator.validate_resume(resume_text, job_description)
+        result = validator.validate_resume(resume_text, job_description)
+        if isinstance(result, dict) and result.get("error"):
+            logger.error("Resume validation error: %s", result.get("error"))
+            raise HTTPException(status_code=500, detail="Error validating resume")
+        return result
     except Exception as e:
         logger.exception("Resume text validation failed")
         raise HTTPException(status_code=500, detail="Error validating resume")
