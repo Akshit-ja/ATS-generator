@@ -3,6 +3,7 @@ from typing import Dict, List
 from sqlalchemy.orm import Session
 from ..db.database import get_db
 from ..services.resume_service import ResumeService
+from ..services.resume_matcher import ResumeMatcher
 from ..auth.jwt import get_current_active_user
 from ..db.models import User
 from ..middleware.rate_limiter import rate_limit

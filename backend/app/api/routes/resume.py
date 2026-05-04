@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
+import inspect
 import os
 from ...services.resume_parser import ResumeParser
 from ...services.resume_matcher import ResumeMatcher
@@ -10,6 +11,7 @@ from ..dependencies import rate_limit_dependency, verify_resume_ownership
 from sqlalchemy.orm import Session
 from ...database import get_db
 from ...db.models import Resume
+from ...routers import resume as legacy_resume
 
 router = APIRouter(prefix="/api/v1", tags=["resumes"])
 resume_parser = ResumeParser()
@@ -44,6 +46,62 @@ class MatchScoreResponse(BaseModel):
     overall_match_score: int
     breakdown: Dict[str, float]
     missing_critical_keywords: List[str]
+
+@router.post("/resumes/generate")
+async def generate_resume_content(
+    resume_data: Dict[str, Any],
+    current_user: User = Depends(legacy_resume.get_current_active_user),
+    _: None = Depends(rate_limit_dependency())
+):
+    """
+    Generate resume content for the provided resume data.
+    """
+    resume_service = legacy_resume.ResumeService()
+    try:
+        job_description = resume_data.get("job_description", "")
+        template = resume_data.get("template", "modern")
+        result = resume_service.generate_resume_content(resume_data, job_description, template)
+        if inspect.isawaitable(result):
+            result = await result
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/resumes/cover-letter")
+async def generate_cover_letter(
+    cover_letter_request: Dict[str, Any],
+    current_user: User = Depends(legacy_resume.get_current_active_user),
+    _: None = Depends(rate_limit_dependency())
+):
+    """
+    Generate a cover letter based on resume data and job description.
+    """
+    resume_service = legacy_resume.ResumeService()
+    try:
+        resume_data = cover_letter_request.get("resume_data", {})
+        job_description = cover_letter_request.get("job_description", "")
+        style = cover_letter_request.get("template", cover_letter_request.get("style", "professional"))
+        result = resume_service.generate_cover_letter(resume_data, job_description, style)
+        if inspect.isawaitable(result):
+            result = await result
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/resumes/match-score")
+async def match_resume_to_job_v2(
+    match_request: MatchScoreRequest,
+    current_user: User = Depends(legacy_resume.get_current_active_user),
+    _: None = Depends(rate_limit_dependency())
+):
+    """
+    Calculate match score between resume and job description.
+    """
+    matcher = legacy_resume.ResumeMatcher()
+    try:
+        return matcher.match_resume_to_job(match_request.resume_text, match_request.job_description)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/parse", response_model=ParsedResumeResponse)
 async def parse_resume(

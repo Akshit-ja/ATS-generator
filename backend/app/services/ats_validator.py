@@ -47,23 +47,27 @@ class ATSValidator:
         """Initialize the ATS validator."""
         pass
     
-    def validate_resume(self, file_path: str) -> Dict[str, Any]:
+    def validate_resume(self, resume_input: str, job_description: Optional[str] = None) -> Dict[str, Any]:
         """
-        Validate a resume file against ATS compliance rules.
+        Validate a resume file or resume text against ATS compliance rules.
         
         Args:
-            file_path: Path to the resume file (PDF or DOCX)
+            resume_input: Path to the resume file (PDF or DOCX) or resume text
+            job_description: Optional job description when validating text input
             
         Returns:
             Dictionary with validation results for each rule and overall score
         """
-        file_ext = os.path.splitext(file_path)[1].lower()
-        
+        if job_description is not None:
+            return self._validate_text(resume_input)
+
+        file_ext = os.path.splitext(resume_input)[1].lower()
+
         try:
             if file_ext == '.pdf':
-                return self._validate_pdf(file_path)
+                return self._validate_pdf(resume_input)
             elif file_ext == '.docx':
-                return self._validate_docx(file_path)
+                return self._validate_docx(resume_input)
             else:
                 return {
                     "error": f"Unsupported file format: {file_ext}. Please upload a PDF or DOCX file.",
@@ -77,6 +81,19 @@ class ATSValidator:
                 "overall_score": 0,
                 "passed": False
             }
+
+    def _validate_text(self, resume_text: str) -> Dict[str, Any]:
+        """Validate resume text against basic ATS rules."""
+        results = self._validate_content(resume_text)
+        overall_score = self._calculate_score(results)
+
+        return {
+            "overall_score": overall_score,
+            "recognized_headers": results.get("recognized_section_headers", False),
+            "proper_date_formats": results.get("proper_date_formats", False),
+            "content_score": overall_score,
+            "suggestions": []
+        }
     
     def _validate_pdf(self, file_path: str) -> Dict[str, Any]:
         """Validate a PDF resume file."""

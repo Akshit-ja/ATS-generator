@@ -5,6 +5,7 @@ from ...auth.models import User
 from ...auth.jwt import get_current_active_user
 from ..dependencies import rate_limit_dependency
 from ..schemas.validate import ResumeValidationRequest, ValidationResponse
+from ...routers import validate as legacy_validate
 
 router = APIRouter(prefix="/api/v1", tags=["validate"])
 validator = ResumeValidator()
@@ -29,6 +30,23 @@ async def validate_resume(
         )
         
         return validation_result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/validate/resume")
+async def validate_resume_text(
+    validation_data: Dict,
+    current_user: User = Depends(legacy_validate.get_current_active_user),
+    _: None = Depends(rate_limit_dependency())
+):
+    """
+    Validate resume text for ATS compliance (integration-test endpoint).
+    """
+    validator = legacy_validate.ATSValidator()
+    try:
+        resume_text = validation_data.get("resume_text", "")
+        job_description = validation_data.get("job_description")
+        return validator.validate_resume(resume_text, job_description)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         

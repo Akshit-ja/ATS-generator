@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     
     # OpenAI settings
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+
+    # AI cost settings (per 1K tokens)
+    GPT_PROMPT_PRICE_PER_1K: float = float(os.getenv("GPT_PROMPT_PRICE_PER_1K", "0.01"))
+    GPT_COMPLETION_PRICE_PER_1K: float = float(os.getenv("GPT_COMPLETION_PRICE_PER_1K", "0.02"))
     
     model_config = {
         "case_sensitive": True
