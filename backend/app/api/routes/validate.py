@@ -54,28 +54,3 @@ async def validate_resume_text(
     except Exception as e:
         logger.exception("Resume text validation failed")
         raise HTTPException(status_code=500, detail="Error validating resume")
-        
-        # Check for errors
-        if "error" in validation_result:
-            raise HTTPException(status_code=400, detail=validation_result["error"])
-        
-        # Extract rule results
-        rule_results = {k: v for k, v in validation_result.items() 
-                       if k not in ["overall_score", "passed", "error"]}
-        
-        # Return formatted response
-        return {
-            "overall_score": validation_result["overall_score"],
-            "passed": validation_result["passed"],
-            "rule_results": rule_results
-        }
-        
-    except Exception as e:
-        # Clean up in case of error
-        if 'temp_file_path' in locals():
-            try:
-                os.unlink(temp_file_path)
-            except:
-                pass
-        
-        raise HTTPException(status_code=500, detail=f"Error validating resume: {str(e)}")

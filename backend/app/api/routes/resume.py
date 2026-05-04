@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import inspect
+import logging
 import os
 from ...services.resume_parser import ResumeParser
 from ...services.resume_matcher import ResumeMatcher
@@ -12,6 +13,8 @@ from sqlalchemy.orm import Session
 from ...database import get_db
 from ...db.models import Resume
 from ...routers import resume as legacy_resume
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["resumes"])
 resume_parser = ResumeParser()
@@ -65,7 +68,8 @@ async def generate_resume_content(
             result = await result
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Resume generation failed")
+        raise HTTPException(status_code=500, detail="Error generating resume")
 
 @router.post("/resumes/cover-letter")
 async def generate_cover_letter(
@@ -86,7 +90,8 @@ async def generate_cover_letter(
             result = await result
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Cover letter generation failed")
+        raise HTTPException(status_code=500, detail="Error generating cover letter")
 
 @router.post("/resumes/match-score")
 async def match_resume_to_job_v2(
@@ -101,7 +106,8 @@ async def match_resume_to_job_v2(
     try:
         return matcher.match_resume_to_job(match_request.resume_text, match_request.job_description)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Resume matching failed")
+        raise HTTPException(status_code=500, detail="Error matching resume to job")
 
 @router.post("/parse", response_model=ParsedResumeResponse)
 async def parse_resume(
