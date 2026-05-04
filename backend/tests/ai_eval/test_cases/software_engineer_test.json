@@ -1,0 +1,8 @@
+{
+  "name": "software_engineer_test",
+  "job_description": "Senior Software Engineer with 5+ years of experience in Python. Must have experience with FastAPI, PostgreSQL, and cloud services like AWS. Knowledge of CI/CD pipelines and containerization with Docker is required.",
+  "resume_content": "John Smith\nSenior Software Engineer\n\nSUMMARY\nExperienced software engineer with 6 years of expertise in Python development, FastAPI, and AWS cloud services. Proficient in designing and implementing CI/CD pipelines using GitHub Actions and containerizing applications with Docker.\n\nSKILLS\nProgramming Languages: Python, JavaScript, SQL\nFrameworks: FastAPI, Flask, React\nDatabases: PostgreSQL, MongoDB\nCloud: AWS (EC2, S3, Lambda)\nTools: Docker, Kubernetes, Git, GitHub Actions\n\nEXPERIENCE\nSenior Software Engineer | Tech Solutions Inc. | 2020-Present\n- Developed and maintained RESTful APIs using FastAPI, serving 10k+ daily users\n- Implemented CI/CD pipelines reducing deployment time by 70%\n- Containerized legacy applications using Docker, improving scalability\n\nSoftware Engineer | DataCorp | 2017-2020\n- Built data processing pipelines using Python and AWS Lambda\n- Managed PostgreSQL databases with 100+ tables and complex queries\n- Collaborated with cross-functional teams to deliver features on time\n\nEDUCATION\nB.S. Computer Science | University of Technology | 2017",
+  "expected_keyword_density": 90,
+  "expected_semantic_coherence": 95,
+  "expected_ats_compliance": 90
+}
