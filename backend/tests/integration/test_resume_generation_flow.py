@@ -28,11 +28,13 @@ def client(mock_auth):
 # Mock authentication
 @pytest.fixture
 def mock_auth():
+    original_overrides = app.dependency_overrides.copy()
     test_user = SimpleNamespace(id="test-user-id", email="test@example.com", is_active=True)
     app.dependency_overrides[auth_jwt.get_current_active_user] = lambda: test_user
     app.dependency_overrides[auth_jwt.get_optional_current_user] = lambda: test_user
     yield test_user
     app.dependency_overrides.clear()
+    app.dependency_overrides.update(original_overrides)
 
 # Mock ResumeService
 @pytest.fixture
