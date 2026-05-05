@@ -41,16 +41,17 @@ def rate_limit_dependency(tier: str = "free"):
         if current_user:
             client_identifier = str(current_user.id)
         else:
-            forwarded_for = request.headers.get("x-forwarded-for")
-            if forwarded_for:
-                client_identifier = forwarded_for.split(",")[0].strip()
-            elif request.client and request.client.host:
+            if request.client and request.client.host:
                 client_identifier = request.client.host
             else:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Unable to identify client for rate limiting."
-                )
+                forwarded_for = request.headers.get("x-forwarded-for")
+                if forwarded_for:
+                    client_identifier = forwarded_for.split(",")[0].strip()
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Unable to identify client for rate limiting."
+                    )
 
         # Set tier-specific limits
         limits = {
