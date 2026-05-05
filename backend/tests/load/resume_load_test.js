@@ -116,6 +116,7 @@ function buildResumeData() {
 
 // Main test function
 export default function() {
+  // Default to local API base URL when no environment override is provided.
   const baseUrl = __ENV.LOAD_TEST_BASE_URL || 'http://localhost:8000/api/v1';
   const authToken = getAuthToken();
   const headers = {
