@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 import logging
-from typing import Dict
+from typing import Dict, Optional
 from ...services.resume_validator import ResumeValidator
 from ...auth.models import User
-from ...auth.jwt import get_current_active_user
+from ...auth.jwt import get_current_active_user, get_optional_current_user
 from ..dependencies import rate_limit_dependency
 from ..schemas.validate import ResumeValidationRequest, ValidationResponse
 from ...routers import validate as legacy_validate
@@ -40,7 +40,7 @@ async def validate_resume(
 @router.post("/validate/resume")
 async def validate_resume_text(
     validation_data: Dict,
-    current_user: User = Depends(legacy_validate.get_current_active_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     _: None = Depends(rate_limit_dependency())
 ):
     """

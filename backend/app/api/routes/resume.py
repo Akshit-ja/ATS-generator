@@ -7,7 +7,7 @@ import os
 from ...services.resume_parser import ResumeParser
 from ...services.resume_matcher import ResumeMatcher
 from ...auth.models import User
-from ...auth.jwt import get_current_active_user
+from ...auth.jwt import get_current_active_user, get_optional_current_user
 from ..dependencies import rate_limit_dependency, verify_resume_ownership
 from sqlalchemy.orm import Session
 from ...database import get_db
@@ -53,7 +53,7 @@ class MatchScoreResponse(BaseModel):
 @router.post("/resumes/generate")
 async def generate_resume_content(
     resume_data: Dict[str, Any],
-    current_user: User = Depends(legacy_resume.get_current_active_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     _: None = Depends(rate_limit_dependency())
 ):
     """
@@ -74,7 +74,7 @@ async def generate_resume_content(
 @router.post("/resumes/cover-letter")
 async def generate_cover_letter(
     cover_letter_request: Dict[str, Any],
-    current_user: User = Depends(legacy_resume.get_current_active_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     _: None = Depends(rate_limit_dependency())
 ):
     """
@@ -96,7 +96,7 @@ async def generate_cover_letter(
 @router.post("/resumes/match-score")
 async def match_resume_to_job_v2(
     match_request: MatchScoreRequest,
-    current_user: User = Depends(legacy_resume.get_current_active_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     _: None = Depends(rate_limit_dependency())
 ):
     """
