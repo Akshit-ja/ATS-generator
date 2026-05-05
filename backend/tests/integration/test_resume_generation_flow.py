@@ -35,9 +35,11 @@ def mock_auth():
     test_user.is_active = True
     app.dependency_overrides[auth_jwt.get_current_active_user] = lambda: test_user
     app.dependency_overrides[auth_jwt.get_optional_current_user] = lambda: test_user
-    yield test_user
-    app.dependency_overrides.clear()
-    app.dependency_overrides.update(original_overrides)
+    try:
+        yield test_user
+    finally:
+        app.dependency_overrides.clear()
+        app.dependency_overrides.update(original_overrides)
 
 # Mock ResumeService
 @pytest.fixture
