@@ -104,6 +104,7 @@ function getAuthToken() {
   return "mock_auth_token";
 }
 
+// Build randomized resume data for load testing.
 function buildResumeData() {
   const baseResume = randomItem(sampleResumes);
   const resumeData = { ...baseResume };
