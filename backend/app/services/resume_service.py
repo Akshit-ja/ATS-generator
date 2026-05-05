@@ -1,16 +1,18 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
+import inspect
 from sqlalchemy.orm import Session
 from ..db.models import EndpointType
 from .token_tracker import TokenTracker
 from .multi_ai_service import MultiAIService
+from ..core.config import settings
 
 class ResumeService:
     """Service for handling resume operations"""
     
-    def __init__(self, db: Session = None):
+    def __init__(self, db: Session = None, gpt_service: Optional[object] = None):
         self.db = db
         self.token_tracker = TokenTracker(db) if db else None
-        self.ai_service = MultiAIService()
+        self.ai_service = gpt_service or MultiAIService()
     
     def create_resume(self, resume_data: Dict) -> Dict:
         """
@@ -75,3 +77,78 @@ class ResumeService:
             "summary": f"Experienced professional with skills matching {job_description}",
             "ai_enhanced": True
         }
+
+    async def generate_resume_content(
+        self,
+        resume_data: Dict[str, Any],
+        job_description: str,
+        template: str = "modern"
+    ) -> Dict[str, Any]:
+        """
+        Generate resume content using the configured AI service.
+        """
+        ai_result = await self._maybe_await(
+            self.ai_service.generate_resume_content(resume_data, job_description)
+        )
+        return self._normalize_ai_result(ai_result)
+
+    async def generate_cover_letter(
+        self,
+        resume_data: Dict[str, Any],
+        job_description: str,
+        style: str = "professional"
+    ) -> Dict[str, Any]:
+        """
+        Generate a cover letter using the configured AI service.
+        """
+        if hasattr(self.ai_service, "generate_cover_letter"):
+            ai_result = await self._maybe_await(
+                self.ai_service.generate_cover_letter(resume_data, job_description, style)
+            )
+            return self._normalize_ai_result(ai_result)
+
+        fallback_content = (
+            f"Cover letter for {resume_data.get('name', 'candidate')} "
+            f"tailored to: {job_description}"
+        )
+        return {
+            "content": fallback_content,
+            "token_usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+            "cost": 0.0
+        }
+
+    def _calculate_cost(self, token_usage: Dict[str, int]) -> float:
+        prompt_tokens = token_usage.get("prompt_tokens", 0)
+        completion_tokens = token_usage.get("completion_tokens", 0)
+        return (
+            (prompt_tokens * settings.GPT_PROMPT_PRICE_PER_1K / 1000)
+            + (completion_tokens * settings.GPT_COMPLETION_PRICE_PER_1K / 1000)
+        )
+
+    def _normalize_ai_result(self, ai_result: Any) -> Dict[str, Any]:
+        if isinstance(ai_result, dict):
+            token_usage = ai_result.get("token_usage", {})
+            content = ai_result.get("content")
+            if content is None:
+                content_parts = []
+                for key, value in ai_result.items():
+                    if key in {"token_usage", "cost"}:
+                        continue
+                    if isinstance(value, (str, int, float)):
+                        content_parts.append(str(value))
+                content = "\n".join(content_parts)
+            normalized = dict(ai_result)
+            normalized.setdefault("content", content)
+        else:
+            token_usage = {}
+            normalized = {"content": str(ai_result)}
+
+        cost = self._calculate_cost(token_usage) if token_usage else 0.0
+        normalized.setdefault("token_usage", token_usage)
+        normalized["cost"] = cost
+        return normalized
+
+    async def _maybe_await(self, value: Any) -> Any:
+        if inspect.isawaitable(value):
+            return await value
+        return value

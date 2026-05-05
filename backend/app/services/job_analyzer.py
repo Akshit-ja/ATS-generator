@@ -29,6 +29,7 @@ class JobAnalyzer:
             ]),
             "tools": set([
                 "jira", "confluence", "slack", "teams", "github", "gitlab", "bitbucket", "jenkins", "travis",
+                "aws", "azure", "gcp",
                 "circleci", "docker", "kubernetes", "terraform", "ansible", "puppet", "chef", "prometheus",
                 "grafana", "datadog", "splunk", "elasticsearch", "kibana", "logstash", "kafka", "rabbitmq",
                 "redis", "memcached", "nginx", "apache", "iis", "tomcat", "webpack", "babel", "npm", "yarn",
@@ -49,7 +50,7 @@ class JobAnalyzer:
         # Experience level indicators
         self.experience_levels = {
             "entry": ["entry level", "junior", "0-1 year", "0-2 years", "graduate", "recent graduate", "intern"],
-            "mid": ["mid level", "intermediate", "2-5 years", "3-5 years", "experienced"],
+            "mid": ["mid level", "mid-level", "intermediate", "2-5 years", "3-5 years", "experienced"],
             "senior": ["senior", "lead", "5+ years", "7+ years", "10+ years", "principal", "architect", "manager"]
         }
     
@@ -104,7 +105,14 @@ class JobAnalyzer:
         words = text.split()
         
         # Filter words (remove common stop words and short words)
-        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should'}
+        stop_words = {
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+            'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did',
+            'will', 'would', 'could', 'should', 'years', 'year', 'experience', 'experiences',
+            'required', 'requirements', 'requirement', 'responsible', 'responsibilities',
+            'looking', 'needed', 'need', 'role', 'position', 'company', 'companies', 'like',
+            'including', 'include', 'includes', 'must', 'knowledge'
+        }
         
         filtered_words = []
         for word in words:
@@ -121,12 +129,15 @@ class JobAnalyzer:
     def _categorize_keywords(self, keywords: List[str]) -> Dict[str, List[str]]:
         """Categorize keywords into predefined categories"""
         result = {category: [] for category in self.categories.keys()}
+        category_order = ["tools", "skills", "methodologies", "soft_skills"]
         
         for keyword in keywords:
+            keyword_lower = keyword.lower()
             categorized = False
-            for category, terms in self.categories.items():
+            for category in category_order:
+                terms = self.categories[category]
                 for term in terms:
-                    if term in keyword or keyword in term:
+                    if term in keyword_lower or keyword_lower in term:
                         if keyword not in result[category]:
                             result[category].append(keyword)
                             categorized = True
@@ -138,6 +149,7 @@ class JobAnalyzer:
     
     def _determine_experience_level(self, text: str) -> str:
         """Determine required experience level from text"""
+        text = text.lower()
         # Count occurrences of experience level indicators
         level_counts = {level: 0 for level in self.experience_levels.keys()}
         

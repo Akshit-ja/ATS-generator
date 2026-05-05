@@ -69,9 +69,18 @@ async def check_rate_limit(
 
 def rate_limit(
     rate_limit: Optional[int] = None,
-    burst_limit: Optional[int] = None
+    burst_limit: Optional[int] = None,
+    requests: Optional[int] = None,
+    period: Optional[int] = None,
 ):
-    """Decorator for rate limiting API endpoints"""
+    """Decorator for rate limiting API endpoints.
+    
+    Accepts either:
+      - rate_limit / burst_limit  (original signature)
+      - requests / period         (alias: requests maps to rate_limit, period is ignored)
+    """
+    # Normalize: 'requests' is an alias for 'rate_limit'
+    effective_rate_limit = rate_limit or requests
     
     def decorator(func: Callable):
         @wraps(func)
@@ -110,7 +119,7 @@ def rate_limit(
                 return await func(*args, **kwargs)
             
             # Get endpoint-specific rate limit or use default
-            endpoint_rate_limit = rate_limit or ENDPOINT_LIMITS.get(request.url.path, DEFAULT_RATE_LIMIT)
+            endpoint_rate_limit = effective_rate_limit or ENDPOINT_LIMITS.get(request.url.path, DEFAULT_RATE_LIMIT)
             endpoint_burst_limit = burst_limit or DEFAULT_BURST_LIMIT
             
             # Get current user if authenticated

@@ -33,6 +33,8 @@ api_cost_counter = None
 
 def setup_telemetry():
     """Initialize OpenTelemetry with trace and metrics providers."""
+    if os.getenv("DISABLE_TELEMETRY", "").strip().lower() in {"1", "true", "yes"}:
+        return None, None
     # Create a resource with service information
     resource = Resource.create({"service.name": SERVICE_NAME})
     
@@ -140,6 +142,8 @@ def get_tracer(name=SERVICE_NAME):
 
 def track_gpt_request(prompt_tokens, completion_tokens, model, duration):
     """Track GPT request metrics including cost."""
+    if gpt_response_time is None or api_cost_counter is None:
+        return
     # Record response time
     gpt_response_time.record(duration, {"model": model})
     
@@ -156,6 +160,8 @@ def track_gpt_request(prompt_tokens, completion_tokens, model, duration):
 
 def track_redis_cache(hit):
     """Track Redis cache hit/miss."""
+    if redis_cache_hits is None or redis_cache_misses is None:
+        return
     if hit:
         redis_cache_hits.add(1)
     else:
@@ -163,4 +169,6 @@ def track_redis_cache(hit):
 
 def track_error(error_type):
     """Track application errors by type."""
+    if error_counter is None:
+        return
     error_counter.add(1, {"error_type": error_type})

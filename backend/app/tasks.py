@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import time
+from functools import lru_cache
 from typing import Dict, Any, Optional
 from openai import OpenAI
 from .celery_config import celery_app
@@ -9,8 +10,12 @@ from .core.telemetry import get_tracer, track_gpt_request, celery_task_duration,
 
 logger = logging.getLogger(__name__)
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+@lru_cache(maxsize=1)
+def get_openai_client() -> OpenAI:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set")
+    return OpenAI(api_key=api_key)
 
 # Get tracer for custom spans
 tracer = get_tracer("resume_tasks")
@@ -208,6 +213,7 @@ def generate_content_with_gpt4(prompt: str) -> str:
         with tracer.start_as_current_span("openai_gpt4_request") as span:
             span.set_attribute("prompt.length", len(prompt))
             
+            client = get_openai_client()
             response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[

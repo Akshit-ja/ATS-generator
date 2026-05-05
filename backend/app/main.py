@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .api.routes import resume, job, generate, validate, documents
-from .auth.routes import router as auth_router
+from .auth.routes import router as auth_router, users_router
 from .routers import admin, budget, interview
 from .database import engine, Base
 from .core.telemetry import setup_telemetry, instrument_app
@@ -37,6 +37,7 @@ app.include_router(resume_optimization.router)
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(users_router)
 app.include_router(resume.router)
 app.include_router(job.router)
 app.include_router(generate.router)

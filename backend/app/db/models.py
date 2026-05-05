@@ -2,11 +2,14 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, DateT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from passlib.context import CryptContext
 import uuid
 import enum
 from datetime import datetime
 
 Base = declarative_base()
+
+_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Association tables for many-to-many relationships
 resume_skills = Table(
@@ -42,6 +45,26 @@ class User(Base):
     celery_tasks = relationship("CeleryTask", back_populates="user")
     token_usage = relationship("TokenUsage", back_populates="user")
     budget_settings = relationship("UserBudgetSettings", back_populates="user", uselist=False)
+
+    @staticmethod
+    def get_password_hash(password: str) -> str:
+        return _pwd_context.hash(User._normalize_password(password))
+
+    @staticmethod
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        return _pwd_context.verify(User._normalize_password(plain_password), hashed_password)
+
+    @staticmethod
+    def _normalize_password(password):
+        if password is None:
+            return password
+        if isinstance(password, str):
+            password_bytes = password.encode("utf-8")
+        else:
+            password_bytes = password
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+        return password_bytes
 
 
 class UserProfile(Base):

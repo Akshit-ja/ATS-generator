@@ -1,10 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict
+import logging
+from typing import Dict, Optional
 from ...services.resume_validator import ResumeValidator
 from ...auth.models import User
-from ...auth.jwt import get_current_active_user
+from ...auth.jwt import get_current_active_user, get_optional_current_user
 from ..dependencies import rate_limit_dependency
 from ..schemas.validate import ResumeValidationRequest, ValidationResponse
+from ...routers import validate as legacy_validate
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1", tags=["validate"])
 validator = ResumeValidator()
@@ -30,29 +34,36 @@ async def validate_resume(
         
         return validation_result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-        
-        # Check for errors
-        if "error" in validation_result:
-            raise HTTPException(status_code=400, detail=validation_result["error"])
-        
-        # Extract rule results
-        rule_results = {k: v for k, v in validation_result.items() 
-                       if k not in ["overall_score", "passed", "error"]}
-        
-        # Return formatted response
+        logger.exception("Resume validation failed")
+        raise HTTPException(status_code=500, detail="Error validating resume")
+
+@router.post("/validate/resume")
+async def validate_resume_text(
+    validation_data: Dict,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    _: None = Depends(rate_limit_dependency())
+):
+    """
+    Validate resume text for ATS compliance (integration-test endpoint).
+    """
+    validator = legacy_validate.ATSValidator()
+    try:
+        resume_text = validation_data.get("resume_text", "")
+        job_description = validation_data.get("job_description")
+        result = validator.validate_resume(resume_text, job_description)
+        if not isinstance(result, dict):
+            logger.error("Unexpected resume validation result type: %s", type(result))
+            raise HTTPException(status_code=500, detail="Error validating resume")
+        if result.get("error"):
+            logger.error("Resume validation error: %s", result.get("error"))
+            raise HTTPException(status_code=500, detail="Error validating resume")
         return {
-            "overall_score": validation_result["overall_score"],
-            "passed": validation_result["passed"],
-            "rule_results": rule_results
+            "overall_score": result.get("overall_score", 0),
+            "recognized_headers": result.get("recognized_headers", False),
+            "proper_date_formats": result.get("proper_date_formats", False),
+            "content_score": result.get("content_score", result.get("overall_score", 0)),
+            "suggestions": result.get("suggestions", [])
         }
-        
     except Exception as e:
-        # Clean up in case of error
-        if 'temp_file_path' in locals():
-            try:
-                os.unlink(temp_file_path)
-            except:
-                pass
-        
-        raise HTTPException(status_code=500, detail=f"Error validating resume: {str(e)}")
+        logger.exception("Resume text validation failed")
+        raise HTTPException(status_code=500, detail="Error validating resume")
