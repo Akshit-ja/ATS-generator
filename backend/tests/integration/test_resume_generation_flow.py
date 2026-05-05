@@ -30,7 +30,7 @@ def mock_auth(monkeypatch):
         id=1,
         email="test@example.com",
         username="test-user",
-        hashed_password="hashed-password",
+        hashed_password="mock-hashed-password",
         is_active=True,
     )
 
