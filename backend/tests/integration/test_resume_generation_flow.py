@@ -1,7 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from types import SimpleNamespace
 import sys
 import os
 from pathlib import Path
@@ -10,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.main import app
+from app.auth.models import User
 from app.auth import jwt as auth_jwt
 from app.api import dependencies as api_dependencies
 from app.services.resume_service import ResumeService
@@ -29,7 +29,10 @@ def client(mock_auth):
 @pytest.fixture
 def mock_auth():
     original_overrides = app.dependency_overrides.copy()
-    test_user = SimpleNamespace(id="test-user-id", email="test@example.com", is_active=True)
+    test_user = MagicMock(spec=User)
+    test_user.id = "test-user-id"
+    test_user.email = "test@example.com"
+    test_user.is_active = True
     app.dependency_overrides[auth_jwt.get_current_active_user] = lambda: test_user
     app.dependency_overrides[auth_jwt.get_optional_current_user] = lambda: test_user
     yield test_user
