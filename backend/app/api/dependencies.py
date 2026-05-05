@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from ..auth.jwt import get_current_active_user
+from ..auth.jwt import get_current_active_user, get_optional_current_user
 from ..auth.models import User
 from ..database import get_db
 import time
@@ -33,9 +33,13 @@ def rate_limit_dependency(tier: str = "free"):
     Rate limiting middleware using Redis sliding window
     Different tiers can have different rate limits
     """
-    async def rate_limit(request: Request, current_user: User = Depends(get_current_active_user)):
+    async def rate_limit(request: Request, current_user: Optional[User] = Depends(get_optional_current_user)):
         if not redis_client:
             # Skip rate limiting if Redis is not available
+            return
+
+        if not current_user:
+            # Skip rate limiting when no authenticated user is available
             return
             
         # Set tier-specific limits
