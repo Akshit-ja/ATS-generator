@@ -48,10 +48,7 @@ def rate_limit_dependency(tier: str = "free"):
                 if forwarded_for:
                     client_identifier = forwarded_for.split(",")[0].strip()
                 else:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Unable to identify client for rate limiting."
-                    )
+                    client_identifier = "unknown"
 
         # Set tier-specific limits
         limits = {
