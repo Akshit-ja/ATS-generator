@@ -100,9 +100,9 @@ jobs:
   load-test:
     runs-on: ubuntu-latest
     needs: [test, frontend-test]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && (vars.LOAD_TEST_BASE_URL || secrets.LOAD_TEST_BASE_URL)
     env:
       LOAD_TEST_BASE_URL: ${{ vars.LOAD_TEST_BASE_URL || secrets.LOAD_TEST_BASE_URL }}
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.LOAD_TEST_BASE_URL != ''
     
     steps:
     - uses: actions/checkout@v4
@@ -133,7 +133,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: [test, frontend-test]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
     
     steps:
     - uses: actions/checkout@v4
@@ -144,22 +147,22 @@ jobs:
     - name: Login to DockerHub
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        username: ${{ env.DOCKERHUB_USERNAME }}
+        password: ${{ env.DOCKERHUB_TOKEN }}
         
     - name: Build and push backend
       uses: docker/build-push-action@v4
       with:
         context: ./backend
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/resume-ai-backend:${{ github.sha }}
+        tags: ${{ env.DOCKERHUB_USERNAME }}/resume-ai-backend:${{ github.sha }}
         
     - name: Build and push frontend
       uses: docker/build-push-action@v4
       with:
         context: ./frontend
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/resume-ai-frontend:${{ github.sha }}
+        tags: ${{ env.DOCKERHUB_USERNAME }}/resume-ai-frontend:${{ github.sha }}
         
   deploy:
     runs-on: ubuntu-latest

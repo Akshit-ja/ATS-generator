@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
+from types import SimpleNamespace
 import sys
 import os
 from pathlib import Path
@@ -9,25 +10,29 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.main import app
+from app.auth import jwt as auth_jwt
+from app.api import dependencies as api_dependencies
 from app.services.resume_service import ResumeService
 from app.services.resume_matcher import ResumeMatcher
 from app.services.ats_validator import ATSValidator
 
 # Test client
 @pytest.fixture
-def client():
-    return TestClient(app)
+def client(mock_auth):
+    original_redis = api_dependencies.redis_client
+    api_dependencies.redis_client = None
+    with TestClient(app) as test_client:
+        yield test_client
+    api_dependencies.redis_client = original_redis
 
 # Mock authentication
 @pytest.fixture
 def mock_auth():
-    with (
-        patch("app.routers.resume.get_current_active_user") as resume_auth,
-        patch("app.routers.validate.get_current_active_user") as validate_auth,
-    ):
-        resume_auth.return_value = {"id": "test-user-id", "email": "test@example.com"}
-        validate_auth.return_value = {"id": "test-user-id", "email": "test@example.com"}
-        yield resume_auth
+    test_user = SimpleNamespace(id="test-user-id", email="test@example.com", is_active=True)
+    app.dependency_overrides[auth_jwt.get_current_active_user] = lambda: test_user
+    app.dependency_overrides[auth_jwt.get_optional_current_user] = lambda: test_user
+    yield test_user
+    app.dependency_overrides.clear()
 
 # Mock ResumeService
 @pytest.fixture
