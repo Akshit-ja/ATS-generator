@@ -106,11 +106,7 @@ function getAuthToken() {
 
 function buildResumeData() {
   const baseResume = randomItem(sampleResumes);
-  const resumeData = {};
-
-  for (const key in baseResume) {
-    resumeData[key] = baseResume[key];
-  }
+  const resumeData = { ...baseResume };
 
   resumeData.job_description = randomItem(sampleJobDescriptions);
   resumeData.template = "modern";
