@@ -18,28 +18,21 @@ from app.services.ats_validator import ATSValidator
 
 # Test client
 @pytest.fixture
-def client(mock_auth):
-    original_redis = api_dependencies.redis_client
-    api_dependencies.redis_client = None
+def client(mock_auth, monkeypatch):
+    monkeypatch.setattr(api_dependencies, "redis_client", None)
     with TestClient(app) as test_client:
         yield test_client
-    api_dependencies.redis_client = original_redis
 
 # Mock authentication
 @pytest.fixture
-def mock_auth():
-    original_overrides = app.dependency_overrides.copy()
+def mock_auth(monkeypatch):
     test_user = MagicMock(spec=User)
     test_user.id = "test-user-id"
     test_user.email = "test@example.com"
     test_user.is_active = True
-    app.dependency_overrides[auth_jwt.get_current_active_user] = lambda: test_user
-    app.dependency_overrides[auth_jwt.get_optional_current_user] = lambda: test_user
-    try:
-        yield test_user
-    finally:
-        app.dependency_overrides.clear()
-        app.dependency_overrides.update(original_overrides)
+    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_current_active_user, lambda: test_user)
+    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_optional_current_user, lambda: test_user)
+    return test_user
 
 # Mock ResumeService
 @pytest.fixture
