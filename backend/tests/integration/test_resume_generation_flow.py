@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import sys
 import os
 from pathlib import Path
@@ -26,12 +26,19 @@ def client(mock_auth, monkeypatch):
 # Mock authentication
 @pytest.fixture
 def mock_auth(monkeypatch):
-    test_user = MagicMock(spec=User)
-    test_user.id = "test-user-id"
-    test_user.email = "test@example.com"
-    test_user.is_active = True
-    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_current_active_user, lambda: test_user)
-    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_optional_current_user, lambda: test_user)
+    test_user = User(
+        id=1,
+        email="test@example.com",
+        username="test-user",
+        hashed_password="hashed-password",
+        is_active=True,
+    )
+
+    def get_test_user() -> User:
+        return test_user
+
+    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_current_active_user, get_test_user)
+    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_optional_current_user, get_test_user)
     return test_user
 
 # Mock ResumeService
