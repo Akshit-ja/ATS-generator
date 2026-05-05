@@ -52,7 +52,8 @@ async def validate_resume_text(
         job_description = validation_data.get("job_description")
         result = validator.validate_resume(resume_text, job_description)
         if not isinstance(result, dict):
-            return result
+            logger.error("Unexpected resume validation result type: %s", type(result))
+            raise HTTPException(status_code=500, detail="Error validating resume")
         if result.get("error"):
             logger.error("Resume validation error: %s", result.get("error"))
             raise HTTPException(status_code=500, detail="Error validating resume")

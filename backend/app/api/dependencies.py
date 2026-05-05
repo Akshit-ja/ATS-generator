@@ -38,10 +38,12 @@ def rate_limit_dependency(tier: str = "free"):
             # Skip rate limiting if Redis is not available
             return
 
-        if not current_user:
-            # Skip rate limiting when no authenticated user is available
-            return
-            
+        client_identifier = (
+            str(current_user.id)
+            if current_user
+            else (request.client.host if request.client else "anonymous")
+        )
+
         # Set tier-specific limits
         limits = {
             "free": {"requests": 10, "window": 60},
@@ -53,7 +55,7 @@ def rate_limit_dependency(tier: str = "free"):
         limit_config = limits.get(tier, limits["free"])
         
         # Create a unique key for each user
-        key = f"rate_limit:{current_user.id}:{request.url.path}"
+        key = f"rate_limit:{client_identifier}:{request.url.path}"
         
         # Get current timestamp
         now = time.time()
