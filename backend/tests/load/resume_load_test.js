@@ -104,9 +104,23 @@ function getAuthToken() {
   return "mock_auth_token";
 }
 
+function buildResumeData() {
+  const baseResume = randomItem(sampleResumes);
+  const resumeData = {};
+
+  for (const key in baseResume) {
+    resumeData[key] = baseResume[key];
+  }
+
+  resumeData.job_description = randomItem(sampleJobDescriptions);
+  resumeData.template = "modern";
+
+  return resumeData;
+}
+
 // Main test function
 export default function() {
-  const baseUrl = 'http://localhost:8000/api/v1';
+  const baseUrl = __ENV.LOAD_TEST_BASE_URL || 'http://localhost:8000/api/v1';
   const authToken = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -114,11 +128,7 @@ export default function() {
   };
 
   // 1. Generate a resume
-  const resumeData = {
-    ...randomItem(sampleResumes),
-    job_description: randomItem(sampleJobDescriptions),
-    template: "modern"
-  };
+  const resumeData = buildResumeData();
 
   const startResumeGen = new Date();
   const resumeResponse = http.post(`${baseUrl}/resumes/generate`, JSON.stringify(resumeData), { headers });
