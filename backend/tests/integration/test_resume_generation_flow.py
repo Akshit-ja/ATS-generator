@@ -27,10 +27,10 @@ def client(mock_auth, monkeypatch):
 @pytest.fixture
 def mock_auth(monkeypatch):
     test_user = User(
-        id=999_999,
+        id=999999,
         email="test@example.com",
         username="test-user",
-        hashed_password="$2b$12$abcdefghijklmnopqrstuvABCDEFGHIJKLMNOPQRSTUVWXYZabcde",
+        hashed_password="$2b$12$CUX53hEJbDMy7LzH/aI0EO/o2B34/42k4TXY2krdAQ26XoYLzh/Xq",
         is_active=True,
     )
 
