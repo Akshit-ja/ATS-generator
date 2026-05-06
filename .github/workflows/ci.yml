@@ -170,7 +170,8 @@ jobs:
           echo "enabled=true" >> "$GITHUB_OUTPUT"
         else
           echo "enabled=false" >> "$GITHUB_OUTPUT"
-          echo "DockerHub credentials not configured; skipping build and push."
+          message="DockerHub credentials not configured; skipping build and push."
+          echo "${message}" | tee -a "$GITHUB_STEP_SUMMARY"
         fi
     
     - name: Set up Docker Buildx
