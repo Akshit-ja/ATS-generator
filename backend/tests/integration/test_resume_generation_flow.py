@@ -16,6 +16,8 @@ from app.services.resume_service import ResumeService
 from app.services.resume_matcher import ResumeMatcher
 from app.services.ats_validator import ATSValidator
 
+TEST_USER_ID = 99999
+
 # Test client
 @pytest.fixture
 def client(mock_auth, monkeypatch):
@@ -27,7 +29,7 @@ def client(mock_auth, monkeypatch):
 @pytest.fixture
 def mock_auth(monkeypatch):
     test_user = User(
-        id=99999,
+        id=TEST_USER_ID,
         email="test@example.com",
         username="test-user",
         hashed_password=User.get_password_hash("test-password"),
