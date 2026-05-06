@@ -16,7 +16,7 @@ from app.services.resume_service import ResumeService
 from app.services.resume_matcher import ResumeMatcher
 from app.services.ats_validator import ATSValidator
 
-# High test-only user ID to avoid collisions with production data.
+# Test-only user ID offset to exceed typical production ranges and avoid collisions.
 TEST_USER_ID_OFFSET = 10000000
 TEST_PASSWORD_HASH = User.get_password_hash("test-password")
 
@@ -41,11 +41,11 @@ def mock_auth(monkeypatch):
     def get_test_user() -> User:
         return test_user
 
-    def get_no_user() -> User | None:
+    def return_no_authenticated_user() -> User | None:
         return None
 
     monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_current_active_user, get_test_user)
-    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_optional_current_user, get_no_user)
+    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_optional_current_user, return_no_authenticated_user)
     return test_user
 
 # Mock ResumeService
