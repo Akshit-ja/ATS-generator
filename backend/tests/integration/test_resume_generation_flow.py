@@ -16,7 +16,7 @@ from app.services.resume_service import ResumeService
 from app.services.resume_matcher import ResumeMatcher
 from app.services.ats_validator import ATSValidator
 
-TEST_USER_ID = 10000000
+TEST_USER_ID_OFFSET = 10000000
 TEST_PASSWORD_HASH = User.get_password_hash("test-password")
 
 # Test client
@@ -30,7 +30,7 @@ def client(mock_auth, monkeypatch):
 @pytest.fixture
 def mock_auth(monkeypatch):
     test_user = User(
-        id=TEST_USER_ID,
+        id=TEST_USER_ID_OFFSET,
         email="test@example.com",
         username="test-user",
         hashed_password=TEST_PASSWORD_HASH,
@@ -40,8 +40,11 @@ def mock_auth(monkeypatch):
     def get_test_user() -> User:
         return test_user
 
+    def get_optional_test_user() -> User | None:
+        return None
+
     monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_current_active_user, get_test_user)
-    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_optional_current_user, get_test_user)
+    monkeypatch.setitem(app.dependency_overrides, auth_jwt.get_optional_current_user, get_optional_test_user)
     return test_user
 
 # Mock ResumeService
