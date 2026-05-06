@@ -119,8 +119,8 @@ jobs:
           echo "base_url=${LOAD_TEST_BASE_URL_SECRET}" >> "$GITHUB_OUTPUT"
         else
           echo "enabled=false" >> "$GITHUB_OUTPUT"
-          echo "Load test base URL not configured; skipping load tests."
-          echo "Load test base URL not configured; skipping load tests." >> "$GITHUB_STEP_SUMMARY"
+          message="Load test base URL not configured; skipping load tests."
+          echo "${message}" | tee -a "$GITHUB_STEP_SUMMARY"
         fi
 
     - name: Install k6
